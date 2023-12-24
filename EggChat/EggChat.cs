@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using HarmonyLib;
 
 namespace EggChat
 {
@@ -7,8 +8,12 @@ namespace EggChat
     {
         private void Awake()
         {
-            // Plugin startup logic
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            Logger.LogInfo("Initializing EggChat");
+            
+            var Harmony = new Harmony(PluginInfo.PLUGIN_GUID);
+            Harmony.PatchAll();
+
+            Logger.LogInfo("Initialized EggChat");
         }
     }
 }
