@@ -17,9 +17,5 @@ namespace EggChat {
 
             Logger.LogInfo("Initialized EggChat");
         }
-
-        public void Log(String str) {
-            Logger.LogInfo(str);
-        }
     }
 }
