@@ -11,10 +11,11 @@ internal class HUDManagerPatch {
     private static IEnumerable<CodeInstruction> SubmitChat_performed_transpiler(IEnumerable<CodeInstruction> instructions) {
         foreach (var instruction in instructions) {
             if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 50) {
-                yield return new CodeInstruction(OpCodes.Ldc_I4_S, 127);
+                yield return new CodeInstruction(OpCodes.Ldc_I4_S, Plugin.maxCharLimit);
             } else {
                 yield return instruction;
             }
+
         }
     }
 
@@ -23,16 +24,17 @@ internal class HUDManagerPatch {
     private static IEnumerable<CodeInstruction> AddPlayerChatMessageServerRpc_transpiler(IEnumerable<CodeInstruction> instructions) {
         foreach (var instruction in instructions) {
             if (instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == 50) {
-                yield return new CodeInstruction(OpCodes.Ldc_I4_S, 127);
+                yield return new CodeInstruction(OpCodes.Ldc_I4_S, Plugin.maxCharLimit);
             } else {
                 yield return instruction;
             }
+            
         }
     }
 
     [HarmonyPatch("Awake")]
     [HarmonyPostfix]
     private static void HUDManager_awake(HUDManager __instance) {
-        __instance.chatTextField.characterLimit = 126;
+        __instance.chatTextField.characterLimit = Plugin.maxCharLimit - 1;
     }
 }
