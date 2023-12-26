@@ -11,6 +11,7 @@ internal class StartOfRoundPatch {
     [HarmonyPatch(typeof(StartOfRound), "EndOfGame", MethodType.Enumerator)]
     [HarmonyTranspiler]
     private static IEnumerable<CodeInstruction> EndOfGame_transpiler(IEnumerable<CodeInstruction> instructions) {
+        // keeps the HUD up during end of game screen
         var hideHUD = typeof(HUDManager).GetMethod("HideHUD");
         foreach (var instruction in instructions) {
             if (CodeInstructionExtensions.Calls(instruction, hideHUD)) {
