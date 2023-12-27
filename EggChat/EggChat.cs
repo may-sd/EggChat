@@ -17,5 +17,9 @@ namespace EggChat {
 
             Logger.LogInfo("Initialized EggChat");
         }
+
+        public static bool isLocalPlayerDead() {
+            return GameNetworkManager.Instance.localPlayerController.isPlayerDead;
+        }
     }
 }
