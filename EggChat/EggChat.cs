@@ -1,7 +1,5 @@
-﻿using System;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Logging;
 using EggChat.Patches;
 using HarmonyLib;
 
@@ -34,9 +32,11 @@ namespace EggChat
         private void SetUpConfigs()
         {
             chatBgOpacity = Config.Bind("UI", "Chat Background Opacity", 0, "The opacity of the chat background. Set values 0-100.");
+            HUDManagerPatch.chatBgOpacity = chatBgOpacity.Value;
             chatBgOpacity.SettingChanged += (obj, args) =>
             {
                 HUDManagerPatch.chatBgOpacity = chatBgOpacity.Value;
+                HUDManagerPatch.SetBgOpacity();
             };
         }
     }

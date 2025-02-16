@@ -10,6 +10,7 @@ namespace EggChat.Patches;
 internal class HUDManagerPatch
 {
     internal static int chatBgOpacity;
+    private static GameObject container;
 
     [HarmonyPatch("Awake")]
     [HarmonyPostfix]
@@ -17,25 +18,54 @@ internal class HUDManagerPatch
     {
         __instance.chatTextField.characterLimit = Plugin.maxCharLimit - 1;
 
+        AddChatBg(__instance);
+    }
 
-        var gameObject = new GameObject("ChatBG");
-        RectTransform imageTransform = gameObject.AddComponent<RectTransform>();
+    private static void AddChatBg(HUDManager __instance)
+    {
+        if (!container)
+        {
+            GameObject bottomLeftCorner = __instance.HUDContainer.transform.Find("BottomLeftCorner").gameObject;
+            container = new("ChatBGContainer");
+            container.transform.SetParent(bottomLeftCorner.transform);
+            container.transform.SetSiblingIndex(0);
+            CopyAttributes(container.transform, bottomLeftCorner.transform.Find("Image"));
 
-        var chatContainerImageRect = __instance.HUDContainer.transform.Find("BottomLeftCorner").Find("Image").GetComponent<RectTransform>();
+            RectTransform rectTransform = container.AddComponent<RectTransform>();
+            CopyAttributes(rectTransform, bottomLeftCorner.transform.Find("Image").GetComponent<RectTransform>());
 
-        imageTransform.parent = __instance.Chat.canvasGroup.transform;
-        imageTransform.anchoredPosition = chatContainerImageRect.anchoredPosition;
-        imageTransform.anchoredPosition3D = chatContainerImageRect.anchoredPosition3D;
-        imageTransform.offsetMax = chatContainerImageRect.offsetMax;
-        imageTransform.offsetMin = chatContainerImageRect.offsetMin;
-        imageTransform.eulerAngles = chatContainerImageRect.eulerAngles;
-        imageTransform.forward = chatContainerImageRect.forward;
-        imageTransform.localScale = Vector2.one;
+            CanvasGroup canvasGroup = container.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = ((float)chatBgOpacity) / 100;
+            canvasGroup.ignoreParentGroups = true;
 
-        var sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 4f, 4f), new Vector2(0f, 0f));
-        Image image = gameObject.AddComponent<Image>();
-        image.sprite = sprite;
-        image.color = Color.black;
+            var sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 4f, 4f), new Vector2(0f, 0f));
+            Image image = container.AddComponent<Image>();
+            image.sprite = sprite;
+            image.color = Color.black;
+        }
+        SetBgOpacity();
+    }
+
+    public static void SetBgOpacity()
+    {
+        CanvasGroup canvasGroup = container.GetComponent<CanvasGroup>();
+        canvasGroup.alpha = ((float)chatBgOpacity) / 100;
+    }
+
+    private static void CopyAttributes(RectTransform t1, RectTransform t2)
+    {
+        t1.anchoredPosition = t2.anchoredPosition;
+        t1.anchoredPosition3D = t2.anchoredPosition3D;
+        t1.offsetMax = t2.offsetMax;
+        t1.offsetMin = t2.offsetMin;
+        t1.eulerAngles = t2.eulerAngles;
+        t1.forward = t2.forward;
+    }
+
+    private static void CopyAttributes(Transform t1, Transform t2)
+    {
+        t1.SetPositionAndRotation(t2.position, t2.rotation);
+        t1.localScale = t2.localScale;
     }
 
     [HarmonyPatch("Update")]
