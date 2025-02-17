@@ -1,6 +1,6 @@
 {
     "name": "EggChat",
-    "version_number": "0.3.0",
+    "version_number": "0.3.1",
     "website_url": "https://github.com/may-sd/EggChat",
     "description": "(WIP) Quality-of-life additions to text chat",
     "dependencies": [
