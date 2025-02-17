@@ -10,7 +10,81 @@ namespace EggChat.Patches;
 internal class HUDManagerPatch
 {
     internal static int chatBgOpacity;
-    private static GameObject container;
+    internal static bool wideChat;
+    private static Transform bottomLeftCorner;
+    private static Transform input;
+    private static Transform text;
+    private static Transform image;
+    private static GameObject background;
+
+    public class Attributes
+    {
+        public static float DefaultSizeDeltaX;
+
+        private static readonly float DefaultAnchorMaxX = 0.5f;
+        private static readonly float WideAnchorMaxX = 1f;
+        private static readonly float WideSizeDeltaX = 141f;
+        public class Text
+        {
+            public class Default
+            {
+                public static float anchorMinX;
+                public static float anchorMaxX = DefaultAnchorMaxX;
+                public static float sizeDeltaX;
+            }
+            public class Wide
+            {
+                public static float anchorMinX = 0.6f;
+                public static float anchorMaxX = WideAnchorMaxX;
+                public static float sizeDeltaX = WideSizeDeltaX;
+            }
+        }
+
+        public class Input
+        {
+            public class Default
+            {
+                public static float anchorMinX;
+                public static float anchorMaxX = DefaultAnchorMaxX;
+                public static float sizeDeltaX;
+            }
+            public class Wide
+            {
+                public static float anchorMinX = 0.4f;
+                public static float anchorMaxX = WideAnchorMaxX;
+                public static float sizeDeltaX = WideSizeDeltaX;
+            }
+        }
+
+        public class Image
+        {
+            public class Default
+            {
+                public static float anchorMinX;
+                public static float sizeDeltaX = WideSizeDeltaX;
+            }
+            public class Wide
+            {
+                public static float anchorMinX = 1f;
+                public static float sizeDeltaX = WideSizeDeltaX + 100;
+            }
+        }
+
+        public class Background
+        {
+            public class Default
+            {
+                public static float anchorMaxX = DefaultAnchorMaxX;
+                public static float sizeDeltaX = DefaultSizeDeltaX;
+            }
+            public class Wide
+            {
+                public static float anchorMaxX = WideAnchorMaxX;
+                public static float sizeDeltaX = WideSizeDeltaX;
+            }
+        }
+
+    }
 
     [HarmonyPatch("Awake")]
     [HarmonyPostfix]
@@ -18,38 +92,97 @@ internal class HUDManagerPatch
     {
         __instance.chatTextField.characterLimit = Plugin.maxCharLimit - 1;
 
-        AddChatBg(__instance);
+        bottomLeftCorner = __instance.HUDContainer.transform.Find("BottomLeftCorner");
+        text = bottomLeftCorner.Find("ChatText");
+        input = bottomLeftCorner.Find("InputField (TMP)");
+        image = bottomLeftCorner.Find("Image");
+        SetDefaultAttributes();
+
+        AddChatBg();
+        SetBgOpacity();
+
+        if (wideChat)
+        {
+            SetWidthType();
+        }
     }
 
-    private static void AddChatBg(HUDManager __instance)
+    private static void AddChatBg()
     {
-        if (!container)
+        if (!background)
         {
-            GameObject bottomLeftCorner = __instance.HUDContainer.transform.Find("BottomLeftCorner").gameObject;
-            container = new("ChatBGContainer");
-            container.transform.SetParent(bottomLeftCorner.transform);
-            container.transform.SetSiblingIndex(0);
-            CopyAttributes(container.transform, bottomLeftCorner.transform.Find("Image"));
+            background = new("ChatBG");
+            Transform bgGO = background.transform;
+            bgGO.SetParent(bottomLeftCorner);
+            bgGO.SetSiblingIndex(0);
 
-            RectTransform rectTransform = container.AddComponent<RectTransform>();
-            CopyAttributes(rectTransform, bottomLeftCorner.transform.Find("Image").GetComponent<RectTransform>());
+            bgGO.SetPositionAndRotation(image.position, image.rotation);
+            bgGO.localScale = image.localScale;
 
-            CanvasGroup canvasGroup = container.AddComponent<CanvasGroup>();
+            RectTransform rectTransform = background.AddComponent<RectTransform>();
+            CopyAttributes(rectTransform, image.GetComponent<RectTransform>());
+
+            CanvasGroup canvasGroup = background.AddComponent<CanvasGroup>();
             canvasGroup.alpha = ((float)chatBgOpacity) / 100;
             canvasGroup.ignoreParentGroups = true;
 
             var sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 4f, 4f), new Vector2(0f, 0f));
-            Image image = container.AddComponent<Image>();
-            image.sprite = sprite;
-            image.color = Color.black;
+            Image img = background.AddComponent<Image>();
+            img.sprite = sprite;
+            img.color = Color.black;
         }
-        SetBgOpacity();
+    }
+
+    private static void SetDefaultAttributes()
+    {
+        Attributes.DefaultSizeDeltaX = image.GetComponent<RectTransform>().sizeDelta.x;
+
+        Attributes.Text.Default.anchorMinX = text.GetComponent<RectTransform>().anchorMin.x;
+        Attributes.Text.Default.sizeDeltaX = text.GetComponent<RectTransform>().sizeDelta.x;
+
+        Attributes.Input.Default.anchorMinX = input.GetComponent<RectTransform>().anchorMin.x;
+        Attributes.Input.Default.sizeDeltaX = input.GetComponent<RectTransform>().sizeDelta.x;
+
+        Attributes.Image.Default.anchorMinX = input.GetComponent<RectTransform>().anchorMin.x;
     }
 
     public static void SetBgOpacity()
     {
-        CanvasGroup canvasGroup = container.GetComponent<CanvasGroup>();
+        CanvasGroup canvasGroup = background.GetComponent<CanvasGroup>();
         canvasGroup.alpha = ((float)chatBgOpacity) / 100;
+    }
+
+    private static void SetWidthAttributes(RectTransform rt, float? anchorMin, float? anchorMax, float sizeDelta)
+    {
+        if (anchorMin != null)
+        {
+            rt.anchorMin = new((float)anchorMin, rt.anchorMin.y);
+
+        }
+        if (anchorMax != null)
+        {
+            rt.anchorMax = new((float)anchorMax, rt.anchorMax.y);
+        }
+        rt.sizeDelta = new(sizeDelta, rt.sizeDelta.y);
+    }
+
+    public static void SetWidthType()
+    {
+        // set widths on input, text, bg, and image
+        if (wideChat)
+        {
+            SetWidthAttributes(input.GetComponent<RectTransform>(), Attributes.Input.Wide.anchorMinX, Attributes.Input.Wide.anchorMaxX, Attributes.Input.Wide.sizeDeltaX);
+            SetWidthAttributes(text.GetComponent<RectTransform>(), Attributes.Text.Wide.anchorMinX, Attributes.Text.Wide.anchorMaxX, Attributes.Text.Wide.sizeDeltaX);
+            SetWidthAttributes(image.GetComponent<RectTransform>(), Attributes.Image.Wide.anchorMinX, null, Attributes.Image.Wide.sizeDeltaX);
+            SetWidthAttributes(background.GetComponent<RectTransform>(), null, Attributes.Background.Wide.anchorMaxX, Attributes.Background.Wide.sizeDeltaX);
+        }
+        else
+        {
+            SetWidthAttributes(input.GetComponent<RectTransform>(), Attributes.Input.Default.anchorMinX, Attributes.Input.Default.anchorMaxX, Attributes.Input.Default.sizeDeltaX);
+            SetWidthAttributes(text.GetComponent<RectTransform>(), Attributes.Text.Default.anchorMinX, Attributes.Text.Default.anchorMaxX, Attributes.Text.Default.sizeDeltaX);
+            SetWidthAttributes(image.GetComponent<RectTransform>(), Attributes.Image.Default.anchorMinX, null, Attributes.Image.Default.sizeDeltaX);
+            SetWidthAttributes(background.GetComponent<RectTransform>(), null, Attributes.Background.Default.anchorMaxX, Attributes.Background.Default.sizeDeltaX);
+        }
     }
 
     private static void CopyAttributes(RectTransform t1, RectTransform t2)
@@ -60,12 +193,6 @@ internal class HUDManagerPatch
         t1.offsetMin = t2.offsetMin;
         t1.eulerAngles = t2.eulerAngles;
         t1.forward = t2.forward;
-    }
-
-    private static void CopyAttributes(Transform t1, Transform t2)
-    {
-        t1.SetPositionAndRotation(t2.position, t2.rotation);
-        t1.localScale = t2.localScale;
     }
 
     [HarmonyPatch("Update")]

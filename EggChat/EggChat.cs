@@ -11,6 +11,7 @@ namespace EggChat
         public static Plugin Instance;
         public static int maxCharLimit = 127;
         private static ConfigEntry<int> chatBgOpacity;
+        private static ConfigEntry<bool> wideChat;
         private void Awake()
         {
             Logger.LogInfo("Initializing EggChat");
@@ -37,6 +38,14 @@ namespace EggChat
             {
                 HUDManagerPatch.chatBgOpacity = chatBgOpacity.Value;
                 HUDManagerPatch.SetBgOpacity();
+            };
+
+            wideChat = Config.Bind("UI", "Wide Chat", false, "Make the chat wider.");
+            HUDManagerPatch.wideChat = wideChat.Value;
+            wideChat.SettingChanged += (obj, args) =>
+            {
+                HUDManagerPatch.wideChat = wideChat.Value;
+                HUDManagerPatch.SetWidthType();
             };
         }
     }
