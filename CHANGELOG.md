@@ -1,3 +1,6 @@
+## 0.3.2
+- Upversion everywhere
+
 ## 0.3.1
 
 - Add the correct dll. my bad
